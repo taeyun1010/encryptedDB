@@ -1,0 +1,7 @@
+sudo /etc/init.d/apache2 restart
+/var/www/html
+g++ testmysql.cpp -o testmysql -lmysqlcppconn
+g++ -ansi -Wall -O3 -o testmysql testmysql.cpp ../common.o -L. -lmysqlcppconn -lfhew -lfftw3 -I/usr/local/MATLAB/R2018a/extern/include
+
+clang -o example example.c -lhcs -lgmp
+./example

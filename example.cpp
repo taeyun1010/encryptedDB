@@ -50,17 +50,17 @@ int main(void)
     mpz_set_str(vk->n, "75822727776998728446689903947435695544428381667286794116597261947279674080807973978855405707322274820579838357992038030501162195279735614956293146562712396928801806421341956903273650787633584337661107446170380886335701806614878605243066129978668664134444303822639682410147597330878529930532751157139066038658714710078842374105894391722854427134167626763502010985836823151271102933024515120574666072285021771775703075212478513383407847850171068852143476937444145092710309365081888939247510360686521581089868517474340851598255933711053653580956671857454820125719990164725597742611538873525590091187125177570251621140967", 10);
     mpz_set_str(vk->n2, "5749086047544854536448029289098236741371917996622550707767526389309484979586488662741717073218385315623585073210402130561257814864825593512404573680590214861401200629727947807251311727153474378025407994270142013406340047810746718849733683699486114524393564063862744699773838140191954319277751428788638454702400665647497721316206086380088260675498777291306588515144520715541934115860832571957489269219817853120606780385812488196415270760792699142320765171274671168145943590561141347994579233359138029513999353058210549870082076600778272879001662580666359747138131759941671012161798083148069662188629567392986104825643647486975305138773692039634728957155379833434061524490898911065792789364181611051714449097330735778816539419982295235373662097297271375015229011915487275961404625203650523014053839975575683691383412623028529162715542829361405612446224365526347029971117265083327098069100517005421678316969484282286707232288021248991130364449436484926052597309792616607569662759489934989021184841505752691856435861940283021145426058212194142545503274407711156452410064334065392422848071420239577167326046541088471144850975899231320787845263194774351956264346509722533609532827110597189906481063115597836939122261695066218961534885695089", 10);
 
-    char * tmp = mpz_get_str(NULL,10,pk->n);
-    std::string Str = tmp;
-    cout << "Str = " << Str << endl;
+    // char * tmp = mpz_get_str(NULL,10,pk->n);
+    // std::string Str = tmp;
+    // cout << "Str = " << Str << endl;
 
-    // In order to free the memory we need to get the right free function:
-    void (*freefunc)(void *, size_t);
-    mp_get_memory_functions (NULL, NULL, &freefunc);
+    // // In order to free the memory we need to get the right free function:
+    // void (*freefunc)(void *, size_t);
+    // mp_get_memory_functions (NULL, NULL, &freefunc);
 
-    // In order to use free one needs to give both the pointer and the block
-    // size. For tmp this is strlen(tmp) + 1, see [1].
-    freefunc(tmp, strlen(tmp) + 1);
+    // // In order to use free one needs to give both the pointer and the block
+    // // size. For tmp this is strlen(tmp) + 1, see [1].
+    // freefunc(tmp, strlen(tmp) + 1);
 
 
     try
@@ -97,13 +97,48 @@ int main(void)
         querystr = querystr + ")";
         // cout << "querystr = " << querystr << endl;
         stmt->execute(querystr);
+
+        querystr = "create table if not exists pubkeyg (owner varchar(20) primary key, ";
+        for (int i=0; i < 66; i++){
+            out.str("");
+            out << i;
+            s = out.str();
+            if (i != 65){
+                querystr = querystr + "g" + s + " bigint unsigned, ";
+            }
+            else {
+                querystr = querystr + "g" + s + " bigint unsigned";
+            }
+        }
+        querystr = querystr + ")";
+        // cout << "querystr = " << querystr << endl;
+        stmt->execute(querystr);
+
+        querystr = "create table if not exists pubkeyn2 (owner varchar(20) primary key, ";
+        for (int i=0; i < 66; i++){
+            out.str("");
+            out << i;
+            s = out.str();
+            if (i != 65){
+                querystr = querystr + "n2_" + s + " bigint unsigned, ";
+            }
+            else {
+                querystr = querystr + "n2_" + s + " bigint unsigned";
+            }
+        }
+        querystr = querystr + ")";
+        // cout << "querystr = " << querystr << endl;
+        stmt->execute(querystr);
+
         
         // res = stmt->executeQuery("SELECT * from encrypted");
         
-        querystr = "insert into pubkeyn values(";
+        querystr = "insert ignore into pubkeyn values(";
 
         querystr = querystr + "\"taeyun\", ";
 
+        char * tmp = mpz_get_str(NULL,10,pk->n);
+        std::string Str = tmp;
         // total of 66 n columns, fill the remaining ones with nulls
         // split into clusters of 19 decimal digits
         int count = 0;
@@ -135,6 +170,86 @@ int main(void)
         }
         cout << "querystr = " << querystr << endl;
         stmt->execute(querystr);
+
+        //insert into pubkeyg table
+        querystr = "insert ignore into pubkeyg values(";
+        querystr = querystr + "\"taeyun\", ";
+        tmp = mpz_get_str(NULL,10,pk->g);
+        Str = tmp;
+        // total of 66 n columns, fill the remaining ones with nulls
+        // split into clusters of 19 decimal digits
+        count = 0;
+        for (unsigned i = 0; i < Str.length(); i += 19) {
+            count = count + 1;
+            if ((i + 19) < Str.length()){
+                querystr = querystr + Str.substr(i, 19) + ", ";
+                // cout << Str.substr(i, 19) << endl;
+            }
+            else{
+                querystr = querystr + Str.substr(i, 19);
+                
+
+            }
+        } 
+        leftones = 66 - count;
+        for (int i = 0; i < leftones; i++){
+            if (i == 0){
+                querystr = querystr + ", ";
+            }
+            if ((i+1) >= leftones){
+                querystr = querystr + "null)";
+            }
+            else{
+                querystr = querystr + "null, ";
+
+            }
+        }
+        cout << "querystr = " << querystr << endl;
+        stmt->execute(querystr);
+
+        //insert into pubkeyn2 table
+        querystr = "insert ignore into pubkeyn2 values(";
+        querystr = querystr + "\"taeyun\", ";
+        tmp = mpz_get_str(NULL,10,pk->n2);
+        Str = tmp;
+        // total of 66 n columns, fill the remaining ones with nulls
+        // split into clusters of 19 decimal digits
+        count = 0;
+        for (unsigned i = 0; i < Str.length(); i += 19) {
+            count = count + 1;
+            if ((i + 19) < Str.length()){
+                querystr = querystr + Str.substr(i, 19) + ", ";
+                // cout << Str.substr(i, 19) << endl;
+            }
+            else{
+                querystr = querystr + Str.substr(i, 19);
+                
+
+            }
+        } 
+        leftones = 66 - count;
+        for (int i = 0; i < leftones; i++){
+            if (i == 0){
+                querystr = querystr + ", ";
+            }
+            if ((i+1) >= leftones){
+                querystr = querystr + "null)";
+            }
+            else{
+                querystr = querystr + "null, ";
+
+            }
+        }
+        cout << "querystr = " << querystr << endl;
+        stmt->execute(querystr);
+
+        // In order to free the memory we need to get the right free function:
+        void (*freefunc)(void *, size_t);
+        mp_get_memory_functions (NULL, NULL, &freefunc);
+
+        // In order to use free one needs to give both the pointer and the block
+        // size. For tmp this is strlen(tmp) + 1, see [1].
+        freefunc(tmp, strlen(tmp) + 1);
 
         // //
         // //

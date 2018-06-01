@@ -14,6 +14,83 @@
 
 using namespace std;
 
+void createtable(string tablename, string columnname, sql::Statement *stmt)
+{
+    string querystr = "create table if not exists " + tablename + " (owner varchar(20) primary key, ";
+    stringstream out;
+    string s;
+    for (int i = 0; i < 66; i++)
+    {
+        out.str("");
+        out << i;
+        s = out.str();
+        if (i != 65)
+        {
+            querystr = querystr + columnname + s + " bigint unsigned, ";
+        }
+        else
+        {
+            querystr = querystr + columnname + s + " bigint unsigned";
+        }
+    }
+    querystr = querystr + ")";
+    // cout << "querystr = " << querystr << endl;
+    stmt->execute(querystr);
+}
+
+void insertintotable(string tablename, string username , mpz_t value, sql::Statement *stmt)
+{
+    string querystr = "insert ignore into " + tablename + " values(";
+
+    querystr = querystr + "\"" + username + "\", ";
+
+    char *tmp = mpz_get_str(NULL, 10, value);
+    std::string Str = tmp;
+    // total of 66 n columns, fill the remaining ones with nulls
+    // split into clusters of 19 decimal digits
+    int count = 0;
+    int leftones;
+    for (unsigned i = 0; i < Str.length(); i += 19)
+    {
+        count = count + 1;
+        if ((i + 19) < Str.length())
+        {
+            querystr = querystr + Str.substr(i, 19) + ", ";
+            // cout << Str.substr(i, 19) << endl;
+        }
+        else
+        {
+            querystr = querystr + Str.substr(i, 19);
+        }
+    }
+    leftones = 66 - count;
+    for (int i = 0; i < leftones; i++)
+    {
+        if (i == 0)
+        {
+            querystr = querystr + ", ";
+        }
+        if ((i + 1) >= leftones)
+        {
+            querystr = querystr + "null)";
+        }
+        else
+        {
+            querystr = querystr + "null, ";
+        }
+    }
+    cout << "querystr = " << querystr << endl;
+    stmt->execute(querystr);
+
+    // In order to free the memory we need to get the right free function:
+    void (*freefunc)(void *, size_t);
+    mp_get_memory_functions(NULL, NULL, &freefunc);
+
+    // In order to use free one needs to give both the pointer and the block
+    // size. For tmp this is strlen(tmp) + 1, see [1].
+    freefunc(tmp, strlen(tmp) + 1);
+}
+
 int main(void)
 {
 
@@ -62,7 +139,6 @@ int main(void)
     // // size. For tmp this is strlen(tmp) + 1, see [1].
     // freefunc(tmp, strlen(tmp) + 1);
 
-
     try
     {
         sql::Driver *driver;
@@ -78,178 +154,234 @@ int main(void)
 
         stmt = con->createStatement();
         // stmt->execute("prepare stmt1 from 'insert into encrypted(ciphertext) values ?'");
-        
+
         std::string s;
         std::stringstream out;
 
         string querystr = "create table if not exists pubkeyn (owner varchar(20) primary key, ";
-        for (int i=0; i < 66; i++){
-            out.str("");
-            out << i;
-            s = out.str();
-            if (i != 65){
-                querystr = querystr + "n" + s + " bigint unsigned, ";
-            }
-            else {
-                querystr = querystr + "n" + s + " bigint unsigned";
-            }
-        }
-        querystr = querystr + ")";
-        // cout << "querystr = " << querystr << endl;
-        stmt->execute(querystr);
+        // for (int i = 0; i < 66; i++)
+        // {
+        //     out.str("");
+        //     out << i;
+        //     s = out.str();
+        //     if (i != 65)
+        //     {
+        //         querystr = querystr + "n" + s + " bigint unsigned, ";
+        //     }
+        //     else
+        //     {
+        //         querystr = querystr + "n" + s + " bigint unsigned";
+        //     }
+        // }
+        // querystr = querystr + ")";
+        // // cout << "querystr = " << querystr << endl;
+        // stmt->execute(querystr);
 
-        querystr = "create table if not exists pubkeyg (owner varchar(20) primary key, ";
-        for (int i=0; i < 66; i++){
-            out.str("");
-            out << i;
-            s = out.str();
-            if (i != 65){
-                querystr = querystr + "g" + s + " bigint unsigned, ";
-            }
-            else {
-                querystr = querystr + "g" + s + " bigint unsigned";
-            }
-        }
-        querystr = querystr + ")";
-        // cout << "querystr = " << querystr << endl;
-        stmt->execute(querystr);
+        createtable("pubkeyn", "n", stmt);
 
-        querystr = "create table if not exists pubkeyn2 (owner varchar(20) primary key, ";
-        for (int i=0; i < 66; i++){
-            out.str("");
-            out << i;
-            s = out.str();
-            if (i != 65){
-                querystr = querystr + "n2_" + s + " bigint unsigned, ";
-            }
-            else {
-                querystr = querystr + "n2_" + s + " bigint unsigned";
-            }
-        }
-        querystr = querystr + ")";
-        // cout << "querystr = " << querystr << endl;
-        stmt->execute(querystr);
+        // querystr = "create table if not exists pubkeyg (owner varchar(20) primary key, ";
+        // for (int i = 0; i < 66; i++)
+        // {
+        //     out.str("");
+        //     out << i;
+        //     s = out.str();
+        //     if (i != 65)
+        //     {
+        //         querystr = querystr + "g" + s + " bigint unsigned, ";
+        //     }
+        //     else
+        //     {
+        //         querystr = querystr + "g" + s + " bigint unsigned";
+        //     }
+        // }
+        // querystr = querystr + ")";
+        // // cout << "querystr = " << querystr << endl;
+        // stmt->execute(querystr);
 
-        
+        createtable("pubkeyg", "g", stmt);
+
+        // querystr = "create table if not exists pubkeyn2 (owner varchar(20) primary key, ";
+        // for (int i = 0; i < 66; i++)
+        // {
+        //     out.str("");
+        //     out << i;
+        //     s = out.str();
+        //     if (i != 65)
+        //     {
+        //         querystr = querystr + "n2_" + s + " bigint unsigned, ";
+        //     }
+        //     else
+        //     {
+        //         querystr = querystr + "n2_" + s + " bigint unsigned";
+        //     }
+        // }
+        // querystr = querystr + ")";
+        // // cout << "querystr = " << querystr << endl;
+        // stmt->execute(querystr);
+
+        createtable("pubkeyn2", "n2_", stmt);
+
         // res = stmt->executeQuery("SELECT * from encrypted");
-        
-        querystr = "insert ignore into pubkeyn values(";
 
-        querystr = querystr + "\"taeyun\", ";
 
-        char * tmp = mpz_get_str(NULL,10,pk->n);
-        std::string Str = tmp;
-        // total of 66 n columns, fill the remaining ones with nulls
-        // split into clusters of 19 decimal digits
-        int count = 0;
-        int leftones;
-        for (unsigned i = 0; i < Str.length(); i += 19) {
-            count = count + 1;
-            if ((i + 19) < Str.length()){
-                querystr = querystr + Str.substr(i, 19) + ", ";
-                // cout << Str.substr(i, 19) << endl;
-            }
-            else{
-                querystr = querystr + Str.substr(i, 19);
-                
 
-            }
-        } 
-        leftones = 66 - count;
-        for (int i = 0; i < leftones; i++){
-            if (i == 0){
-                querystr = querystr + ", ";
-            }
-            if ((i+1) >= leftones){
-                querystr = querystr + "null)";
-            }
-            else{
-                querystr = querystr + "null, ";
 
-            }
-        }
-        cout << "querystr = " << querystr << endl;
-        stmt->execute(querystr);
 
-        //insert into pubkeyg table
-        querystr = "insert ignore into pubkeyg values(";
-        querystr = querystr + "\"taeyun\", ";
-        tmp = mpz_get_str(NULL,10,pk->g);
-        Str = tmp;
-        // total of 66 n columns, fill the remaining ones with nulls
-        // split into clusters of 19 decimal digits
-        count = 0;
-        for (unsigned i = 0; i < Str.length(); i += 19) {
-            count = count + 1;
-            if ((i + 19) < Str.length()){
-                querystr = querystr + Str.substr(i, 19) + ", ";
-                // cout << Str.substr(i, 19) << endl;
-            }
-            else{
-                querystr = querystr + Str.substr(i, 19);
-                
 
-            }
-        } 
-        leftones = 66 - count;
-        for (int i = 0; i < leftones; i++){
-            if (i == 0){
-                querystr = querystr + ", ";
-            }
-            if ((i+1) >= leftones){
-                querystr = querystr + "null)";
-            }
-            else{
-                querystr = querystr + "null, ";
 
-            }
-        }
-        cout << "querystr = " << querystr << endl;
-        stmt->execute(querystr);
 
-        //insert into pubkeyn2 table
-        querystr = "insert ignore into pubkeyn2 values(";
-        querystr = querystr + "\"taeyun\", ";
-        tmp = mpz_get_str(NULL,10,pk->n2);
-        Str = tmp;
-        // total of 66 n columns, fill the remaining ones with nulls
-        // split into clusters of 19 decimal digits
-        count = 0;
-        for (unsigned i = 0; i < Str.length(); i += 19) {
-            count = count + 1;
-            if ((i + 19) < Str.length()){
-                querystr = querystr + Str.substr(i, 19) + ", ";
-                // cout << Str.substr(i, 19) << endl;
-            }
-            else{
-                querystr = querystr + Str.substr(i, 19);
-                
 
-            }
-        } 
-        leftones = 66 - count;
-        for (int i = 0; i < leftones; i++){
-            if (i == 0){
-                querystr = querystr + ", ";
-            }
-            if ((i+1) >= leftones){
-                querystr = querystr + "null)";
-            }
-            else{
-                querystr = querystr + "null, ";
 
-            }
-        }
-        cout << "querystr = " << querystr << endl;
-        stmt->execute(querystr);
 
-        // In order to free the memory we need to get the right free function:
-        void (*freefunc)(void *, size_t);
-        mp_get_memory_functions (NULL, NULL, &freefunc);
+        //
+        //
+        // querystr = "insert ignore into pubkeyn values(";
 
-        // In order to use free one needs to give both the pointer and the block
-        // size. For tmp this is strlen(tmp) + 1, see [1].
-        freefunc(tmp, strlen(tmp) + 1);
+        // querystr = querystr + "\"taeyun\", ";
+
+        // char *tmp = mpz_get_str(NULL, 10, pk->n);
+        // std::string Str = tmp;
+        // // total of 66 n columns, fill the remaining ones with nulls
+        // // split into clusters of 19 decimal digits
+        // int count = 0;
+        // int leftones;
+        // for (unsigned i = 0; i < Str.length(); i += 19)
+        // {
+        //     count = count + 1;
+        //     if ((i + 19) < Str.length())
+        //     {
+        //         querystr = querystr + Str.substr(i, 19) + ", ";
+        //         // cout << Str.substr(i, 19) << endl;
+        //     }
+        //     else
+        //     {
+        //         querystr = querystr + Str.substr(i, 19);
+        //     }
+        // }
+        // leftones = 66 - count;
+        // for (int i = 0; i < leftones; i++)
+        // {
+        //     if (i == 0)
+        //     {
+        //         querystr = querystr + ", ";
+        //     }
+        //     if ((i + 1) >= leftones)
+        //     {
+        //         querystr = querystr + "null)";
+        //     }
+        //     else
+        //     {
+        //         querystr = querystr + "null, ";
+        //     }
+        // }
+        // cout << "querystr = " << querystr << endl;
+        // stmt->execute(querystr);
+        // //
+        // //
+        insertintotable("pubkeyn", "taeyun" , pk->n, stmt);
+
+        // //insert into pubkeyg table
+        // querystr = "insert ignore into pubkeyg values(";
+        // querystr = querystr + "\"taeyun\", ";
+        // tmp = mpz_get_str(NULL, 10, pk->g);
+        // Str = tmp;
+        // // total of 66 n columns, fill the remaining ones with nulls
+        // // split into clusters of 19 decimal digits
+        // count = 0;
+        // for (unsigned i = 0; i < Str.length(); i += 19)
+        // {
+        //     count = count + 1;
+        //     if ((i + 19) < Str.length())
+        //     {
+        //         querystr = querystr + Str.substr(i, 19) + ", ";
+        //         // cout << Str.substr(i, 19) << endl;
+        //     }
+        //     else
+        //     {
+        //         querystr = querystr + Str.substr(i, 19);
+        //     }
+        // }
+        // leftones = 66 - count;
+        // for (int i = 0; i < leftones; i++)
+        // {
+        //     if (i == 0)
+        //     {
+        //         querystr = querystr + ", ";
+        //     }
+        //     if ((i + 1) >= leftones)
+        //     {
+        //         querystr = querystr + "null)";
+        //     }
+        //     else
+        //     {
+        //         querystr = querystr + "null, ";
+        //     }
+        // }
+        // cout << "querystr = " << querystr << endl;
+        // stmt->execute(querystr);
+        insertintotable("pubkeyg", "taeyun" , pk->g, stmt);
+
+        // //insert into pubkeyn2 table
+        // querystr = "insert ignore into pubkeyn2 values(";
+        // querystr = querystr + "\"taeyun\", ";
+        // tmp = mpz_get_str(NULL, 10, pk->n2);
+        // Str = tmp;
+        // // total of 66 n columns, fill the remaining ones with nulls
+        // // split into clusters of 19 decimal digits
+        // count = 0;
+        // for (unsigned i = 0; i < Str.length(); i += 19)
+        // {
+        //     count = count + 1;
+        //     if ((i + 19) < Str.length())
+        //     {
+        //         querystr = querystr + Str.substr(i, 19) + ", ";
+        //         // cout << Str.substr(i, 19) << endl;
+        //     }
+        //     else
+        //     {
+        //         querystr = querystr + Str.substr(i, 19);
+        //     }
+        // }
+        // leftones = 66 - count;
+        // for (int i = 0; i < leftones; i++)
+        // {
+        //     if (i == 0)
+        //     {
+        //         querystr = querystr + ", ";
+        //     }
+        //     if ((i + 1) >= leftones)
+        //     {
+        //         querystr = querystr + "null)";
+        //     }
+        //     else
+        //     {
+        //         querystr = querystr + "null, ";
+        //     }
+        // }
+        // cout << "querystr = " << querystr << endl;
+        // stmt->execute(querystr);
+        insertintotable("pubkeyn2", "taeyun" , pk->n2, stmt);
+
+
+
+
+
+
+
+
+        //
+        //
+        // // In order to free the memory we need to get the right free function:
+        // void (*freefunc)(void *, size_t);
+        // mp_get_memory_functions(NULL, NULL, &freefunc);
+
+        // // In order to use free one needs to give both the pointer and the block
+        // // size. For tmp this is strlen(tmp) + 1, see [1].
+        // freefunc(tmp, strlen(tmp) + 1);
+        //
+        //
+
+
 
         // //
         // //
